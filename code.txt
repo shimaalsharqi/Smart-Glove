@@ -1,0 +1,81 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+// Create LCD object (use 0x3F or 0x27 depending on your module)
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// Define analog pins for flex sensors
+const int flex1 = A0;
+const int flex2 = A1;
+const int flex3 = A2;
+const int flex4 = A3;
+const int flex5 = A4;  // Emergency call
+
+// Define digital pins
+const int ledPin = 13;       // On-board LED
+const int buzzerPin = 8;     // Buzzer
+
+// New lower sensitivity thresholds
+const int thresholdMove = (900,800);  // General threshold for small movement
+
+void setup() {
+  Serial.begin(9600);
+
+  lcd.begin();
+  lcd.backlight();
+  lcd.setCursor(0, 0);
+  lcd.print("START");
+
+  pinMode(ledPin, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
+}
+
+void loop() {
+  int s1 = analogRead(flex1);
+  int s2 = analogRead(flex2);
+  int s3 = analogRead(flex3);
+  int s4 = analogRead(flex4);
+  int s5 = analogRead(flex5);
+
+  Serial.print("S1: "); Serial.print(s1);
+  Serial.print(" | S2: "); Serial.print(s2);
+  Serial.print(" | S3: "); Serial.print(s3);
+  Serial.print(" | S4: "); Serial.print(s4);
+  Serial.print(" | S5: "); Serial.println(s5);
+
+  lcd.setCursor(0, 1);
+
+  // Priority check - only one action at a time
+  if (s1 < 800) {
+    lcd.print("    HELP        ");
+    digitalWrite(ledPin, HIGH);
+    digitalWrite(buzzerPin, HIGH);  // Buzzer only for HELP
+  } 
+  else if (s2 < 900) {
+    lcd.print("    NO         ");
+    digitalWrite(ledPin, LOW);
+    digitalWrite(buzzerPin, LOW);
+  } 
+  else if (s3 < 800) {
+    lcd.print("    YES        ");
+    digitalWrite(ledPin, HIGH);
+    digitalWrite(buzzerPin, LOW);
+  } 
+  else if (s4 > 900) {
+    lcd.print("  I FEEL PAIN    ");
+    digitalWrite(ledPin, LOW);
+    digitalWrite(buzzerPin, LOW);
+  } 
+  else if (s5 < 900) {
+    lcd.print("   Nothing  ");
+    digitalWrite(ledPin, HIGH);
+    digitalWrite(buzzerPin, LOW);
+  } 
+  else {
+    lcd.print("   CALL MY FAMILY    ");
+    digitalWrite(ledPin, LOW);
+    digitalWrite(buzzerPin, LOW);
+  }
+
+  delay(500); // Update every 0.5 seconds
+}
